@@ -208,13 +208,14 @@ if st.button(
 
     st.session_state.bom = bom
 
+   
     max_set = find_max_set_count(
-        box_length,
-        box_width,
-        box_height,
-        bom,
-        max_set=20
-    )
+    box_length,
+    box_width,
+    box_height,
+    bom,
+    max_set=20
+)
 
     placements = get_packing_result(
         box_length,
@@ -223,6 +224,7 @@ if st.button(
         bom,
         max_set
     )
+
 
     total_weight_g = 0
 
@@ -245,7 +247,6 @@ if st.button(
     st.session_state.fig = fig
     st.session_state.max_set = max_set
     st.session_state.total_weight_g = total_weight_g
-
     st.session_state.placements = placements
 
 if st.session_state.placements is not None:
@@ -281,6 +282,7 @@ if st.session_state.result_png:
 if st.session_state.fig is not None:
 
     result_col1, result_col2 = st.columns(2)
+
 
     result_col1.metric(
         "1박스 당 최대 SET",

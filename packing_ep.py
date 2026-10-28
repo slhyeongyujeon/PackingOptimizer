@@ -160,16 +160,13 @@ def generate_candidate_points(
     placements
 ):
 
-
-
     points = {
         (0, 0, 0)
     }
 
-
-
     for p in placements:
 
+        # 기존 3개
         points.add(
             (
                 p.x + p.length,
@@ -195,8 +192,6 @@ def generate_candidate_points(
         )
 
 
-
-
     return sorted(
         points,
         key=lambda p:
@@ -206,6 +201,7 @@ def generate_candidate_points(
             round(p[1], 4)
         )
     )
+
 
 
 
@@ -539,8 +535,6 @@ def build_parts_for_set(
 # Packing Engine
 # ==========================
 
-
-
 def pack_parts_ep(
     box_length,
     box_width,
@@ -548,15 +542,9 @@ def pack_parts_ep(
     parts
 ):
 
-
-
     placements = []
 
-
-
     for part in parts:
-
-
 
         result = place_part_ep(
             placements,
@@ -570,25 +558,13 @@ def pack_parts_ep(
             part["direction"]
         )
 
-
-
         if result is None:
 
-
-
-
-
-
-
             return placements
-
-
 
         placements.append(
             result
         )
-
-
 
     return placements
 
