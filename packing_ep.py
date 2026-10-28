@@ -1233,6 +1233,9 @@ def save_packing_image(
     width = image_files[0][0].width
     height = image_files[0][0].height
 
+    print(width)
+    print(height)
+
     colors = [
         "#1f77b4",
         "#ff7f0e",
@@ -1269,10 +1272,13 @@ def save_packing_image(
 
     try:
         font = ImageFont.truetype(
-            "fonts/NotoSansKR-Regular.ttf",
+            "fonts/NotoSansKR-VariableFont_wght.ttf",
             80
         )
-    except:
+        print("FONT SUCCESS")
+    except Exception as e:
+        print(e)
+        print("FONT FAIL")
         font = ImageFont.load_default()
 
     positions = [
@@ -1338,6 +1344,13 @@ def save_packing_image(
         )
 
     buffer = BytesIO()
+
+    draw.text(
+    (100, 100),
+    "TEST",
+    fill="red",
+    font=font
+)
 
     canvas.save(
         buffer,
