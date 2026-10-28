@@ -1321,7 +1321,7 @@ def save_packing_image(
 
     for i, name in enumerate(part_names):
 
-        y = legend_y + 180 + (i * 180)
+        y = legend_y + 220 + (i * 180)
 
         draw.rectangle(
             (
