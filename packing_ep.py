@@ -1118,7 +1118,8 @@ def create_plotly_figure(
 
     fig.update_layout(
 
-        height=750,
+        width=1400,
+        height=900,
 
         paper_bgcolor="#111111",
 
@@ -1217,7 +1218,7 @@ def save_packing_image(
         fig.write_image(
             buffer,
             format="png",
-            scale=2
+            scale=3
         )
 
         buffer.seek(0)
@@ -1268,11 +1269,11 @@ def save_packing_image(
 
     try:
         font = ImageFont.truetype(
-            "malgun.ttf",
-            50
+            "fonts/NotoSansKR-Regular.ttf",
+            80
         )
     except:
-        font = None
+        font = ImageFont.load_default()
 
     positions = [
         (0, 0),
