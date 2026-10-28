@@ -1255,8 +1255,8 @@ def save_packing_image(
     }
 
     legend_height = max(
-        250,
-        len(part_names) * 70 + 100
+        800,
+        len(part_names) * 220 + 200
     )
 
     canvas = PILImage.new(
@@ -1273,7 +1273,7 @@ def save_packing_image(
     try:
         font = ImageFont.truetype(
             "fonts/NotoSansKR-VariableFont_wght.ttf",
-            80
+            180
         )
         print("FONT SUCCESS")
     except Exception as e:
@@ -1298,8 +1298,8 @@ def save_packing_image(
 
         draw.text(
             (
-                pos[0] + 30,
-                pos[1] + 30
+                pos[0] + 100,
+                pos[1] + 80
             ),
             title,
             fill="white",
@@ -1321,22 +1321,22 @@ def save_packing_image(
 
     for i, name in enumerate(part_names):
 
-        y = legend_y + 70 + (i * 60)
+        y = legend_y + 180 + (i * 180)
 
         draw.rectangle(
             (
-                40,
+                50,
                 y,
-                80,
-                y + 40
+                180,
+                y + 130
             ),
             fill=color_map[name]
         )
 
         draw.text(
             (
-                100,
-                y - 5
+                200,
+                y
             ),
             name,
             fill="white",
@@ -1344,13 +1344,6 @@ def save_packing_image(
         )
 
     buffer = BytesIO()
-
-    draw.text(
-    (100, 100),
-    "TEST",
-    fill="red",
-    font=font
-)
 
     canvas.save(
         buffer,
