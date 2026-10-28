@@ -1312,16 +1312,9 @@ def save_packing_image(
 
     legend_y = height + 20
 
-    draw.text(
-        (40, legend_y),
-        "부품 색상표",
-        fill="white",
-        font=font
-    )
-
     for i, name in enumerate(part_names):
 
-        y = legend_y + 220 + (i * 180)
+        y = legend_y + 80 + (i * 180)
 
         draw.rectangle(
             (
