@@ -166,7 +166,6 @@ def generate_candidate_points(
 
     for p in placements:
 
-        # 기존 3개
         points.add(
             (
                 p.x + p.length,
@@ -191,6 +190,37 @@ def generate_candidate_points(
             )
         )
 
+        points.add(
+            (
+                p.x + p.length,
+                p.y + p.width,
+                p.z
+            )
+        )
+
+        points.add(
+            (
+                p.x + p.length,
+                p.y,
+                p.z + p.height
+            )
+        )
+
+        points.add(
+            (
+                p.x,
+                p.y + p.width,
+                p.z + p.height
+            )
+        )
+
+        points.add(
+            (
+                p.x + p.length,
+                p.y + p.width,
+                p.z + p.height
+            )
+        )
 
     return sorted(
         points,
@@ -229,7 +259,7 @@ def is_supported(
 
 
 
-    required_support_ratio = 0.5
+    required_support_ratio = 0.3
 
 
 
@@ -410,8 +440,6 @@ def can_place_at(
 # Extreme Point Placement
 # ==========================
 
-
-
 def place_part_ep(
     placements,
     box_length,
@@ -424,13 +452,9 @@ def place_part_ep(
     direction
 ):
 
-
-
     points = generate_candidate_points(
         placements
     )
-
-
 
     rotations = get_rotations(
         length,
@@ -439,23 +463,13 @@ def place_part_ep(
         direction
     )
 
-
-
     for point in points:
-
-
 
         px, py, pz = point
 
-
-
         for rotation in rotations:
 
-
-
             l, w, h = rotation
-
-
 
             if can_place_at(
                 px,
@@ -470,8 +484,6 @@ def place_part_ep(
                 box_height
             ):
 
-
-
                 return Placement(
                     part_name,
                     px,
@@ -482,12 +494,7 @@ def place_part_ep(
                     h
                 )
 
-
-
     return None
-
-
-
 
 # ==========================
 # Parts Builder
@@ -650,7 +657,7 @@ def find_max_set_count(
     box_width,
     box_height,
     bom,
-    max_set=20
+    max_set=800
 ):
 
     low = 0

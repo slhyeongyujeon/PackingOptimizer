@@ -26,6 +26,9 @@ if "max_set" not in st.session_state:
 if "total_weight_g" not in st.session_state:
     st.session_state.total_weight_g = None
 
+if "estimated_box_weight_kg" not in st.session_state:
+    st.session_state.estimated_box_weight_kg = None
+
 if "placements" not in st.session_state:
     st.session_state.placements = None
 
@@ -214,7 +217,7 @@ if st.button(
     box_width,
     box_height,
     bom,
-    max_set=20
+    max_set=800
 )
 
     placements = get_packing_result(
@@ -236,6 +239,22 @@ if st.button(
             * max_set
         )
 
+        # 박스 무게 추정
+
+        area_m2 = (
+            2 * (
+                box_length * box_width
+                + box_length * box_height
+                + box_width * box_height
+            )
+        ) / 1_000_000
+
+        estimated_box_weight_kg = area_m2 * 0.9
+
+        total_weight_g += (
+            estimated_box_weight_kg * 1000
+        )
+
     fig = create_plotly_figure(
     box_length,
     box_width,
@@ -247,6 +266,9 @@ if st.button(
     st.session_state.fig = fig
     st.session_state.max_set = max_set
     st.session_state.total_weight_g = total_weight_g
+    st.session_state.estimated_box_weight_kg = (
+    estimated_box_weight_kg
+    )
     st.session_state.placements = placements
 
 if st.session_state.placements is not None:
@@ -292,16 +314,26 @@ if st.session_state.fig is not None:
     if st.session_state.total_weight_g >= 1000:
 
         result_col2.metric(
-            "총 적재 무게",
+            "총 출하 무게",
             f"{st.session_state.total_weight_g / 1000:.2f} kg"
         )
 
     else:
 
         result_col2.metric(
-            "총 적재 무게",
+            "총 출하 무게",
             f"{st.session_state.total_weight_g:.0f} g"
         )
+
+    st.divider()
+
+    st.subheader("운임비 계산 사이트")
+
+    st.link_button(
+        "✈️ FedEx 운임비 계산 바로가기",
+        "https://www.fedex.com/ko-kr/online/rating.html",
+        use_container_width=True
+    )
 
     st.divider()
 
