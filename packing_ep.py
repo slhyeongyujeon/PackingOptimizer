@@ -226,9 +226,9 @@ def generate_candidate_points(
         points,
         key=lambda p:
         (
-            round(p[2], 4),
-            round(p[0], 4),
-            round(p[1], 4)
+            p[2],
+            p[0] + p[1],
+            p[0]
         )
     )
 

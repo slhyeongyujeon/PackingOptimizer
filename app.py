@@ -5,7 +5,8 @@ from packing_ep import (
     find_max_set_count,
     get_packing_result,
     create_plotly_figure,
-    save_packing_image
+    save_packing_image,
+    calculate_utilization
 )
 
 
@@ -34,6 +35,9 @@ if "placements" not in st.session_state:
 
 if "bom" not in st.session_state:
     st.session_state.bom = None
+
+if "utilization" not in st.session_state:
+    st.session_state.utilization = None
 
 
 st.title("📦 Optimizing Packing")
@@ -71,6 +75,7 @@ st.divider()
 default_bom = pd.DataFrame(
     columns=[
         "name",
+        "part_type",
         "qty_per_set",
         "length",
         "width",
@@ -103,6 +108,14 @@ bom_df = st.data_editor(
         "name": st.column_config.TextColumn(
             "부품 이름"
         ),
+
+        "part_type": st.column_config.SelectboxColumn(
+            "부품 종류",
+            options=[
+                "목업 부품 (+50mm)",
+                "사출 부품 (+20mm)"
+            ]
+        ),
         "qty_per_set": st.column_config.NumberColumn(
             "1 SET당 부품 개수"
         ),
@@ -129,6 +142,59 @@ bom_df = st.data_editor(
     }
 )
 
+preview_df = bom_df.copy()
+
+def get_packed_size(row):
+
+    try:
+
+        if row["part_type"] == "목업 부품 (+50mm)":
+            offset = 50
+
+        elif row["part_type"] == "사출 부품 (+20mm)":
+            offset = 20
+
+        else:
+            return ""
+
+        if (
+            pd.isna(row["length"])
+            or
+            pd.isna(row["width"])
+            or
+            pd.isna(row["height"])
+        ):
+            return ""
+
+        return (
+            f"{int(row['length'] + offset)} × "
+            f"{int(row['width'] + offset)} × "
+            f"{int(row['height'] + offset)}"
+        )
+
+    except Exception:
+        return ""
+
+preview_df["적재 적용 크기"] = (
+    preview_df.apply(
+        get_packed_size,
+        axis=1
+    )
+)
+
+st.caption("📦 완충재 반영 후 실제 적재 적용 크기")
+
+st.dataframe(
+    preview_df[
+        [
+            "name",
+            "part_type",
+            "적재 적용 크기"
+        ]
+    ],
+    hide_index=True,
+    use_container_width=True
+)
 
 btn_col1, btn_col2 = st.columns([1,1])
 
@@ -152,6 +218,7 @@ if add_row:
 
     new_row = pd.DataFrame([{
         "name": "",
+        "part_type": None,
         "qty_per_set": None,
         "length": None,
         "width": None,
@@ -159,6 +226,7 @@ if add_row:
         "weight": None,
         "direction": None
     }])
+
 
     st.session_state.bom_df = pd.concat(
         [
@@ -198,6 +266,7 @@ if st.button(
     bom_df = bom_df.dropna(
     subset=[
         "name",
+        "part_type",
         "qty_per_set",
         "length",
         "width",
@@ -208,6 +277,20 @@ if st.button(
     bom = bom_df.to_dict(
     orient="records"
     )
+
+    for item in bom:
+
+        if item["part_type"] == "목업 부품":
+
+            offset = 50
+
+        else:
+
+            offset = 20
+
+        item["length"] += offset
+        item["width"] += offset
+        item["height"] += offset
 
     st.session_state.bom = bom
 
@@ -228,6 +311,14 @@ if st.button(
         max_set
     )
 
+    _, _, utilization = (
+    calculate_utilization(
+        box_length,
+        box_width,
+        box_height,
+        placements
+    )
+)
 
     total_weight_g = 0
 
@@ -239,21 +330,35 @@ if st.button(
             * max_set
         )
 
-        # 박스 무게 추정
+    # 박스 무게 추정
 
-        area_m2 = (
-            2 * (
-                box_length * box_width
-                + box_length * box_height
-                + box_width * box_height
-            )
-        ) / 1_000_000
+    # CBM 계산
 
-        estimated_box_weight_kg = area_m2 * 0.9
+    cbm = (
+            box_length
+            * box_width
+            * box_height
+        ) / 1_000_000_000
 
-        total_weight_g += (
-            estimated_box_weight_kg * 1000
-        )
+    # 박스 중량 적용
+
+    if cbm < 0.1575:
+
+        estimated_box_weight_kg = 1.5
+
+    elif cbm < 0.2:
+
+        estimated_box_weight_kg = 2
+
+    else:
+
+        estimated_box_weight_kg = 3
+
+    # 총 출하 무게 반영
+
+    total_weight_g += (
+        estimated_box_weight_kg * 1000
+    )
 
     fig = create_plotly_figure(
     box_length,
@@ -266,9 +371,11 @@ if st.button(
     st.session_state.fig = fig
     st.session_state.max_set = max_set
     st.session_state.total_weight_g = total_weight_g
+    
     st.session_state.estimated_box_weight_kg = (
     estimated_box_weight_kg
     )
+    st.session_state.utilization = utilization
     st.session_state.placements = placements
 
 if st.session_state.placements is not None:
@@ -303,7 +410,19 @@ if st.session_state.result_png:
 
 if st.session_state.fig is not None:
 
-    result_col1, result_col2 = st.columns(2)
+    result_col1, result_col2, result_col3, result_col4 = st.columns(4)
+
+    result_col3.metric(
+    "추정 박스 무게",
+    f"{st.session_state.estimated_box_weight_kg:.0f} kg"
+)
+
+    if st.session_state.utilization is not None:
+
+        result_col4.metric(
+            "적재율",
+            f"{st.session_state.utilization:.1f}%"
+        )
 
 
     result_col1.metric(
@@ -327,10 +446,10 @@ if st.session_state.fig is not None:
 
     st.divider()
 
-    st.subheader("운임비 계산 사이트")
+    st.subheader("운임비 계산 사이트(FedEx)")
 
     st.link_button(
-        "✈️ FedEx 운임비 계산 바로가기",
+        "✈️ 운임비 계산 바로가기",
         "https://www.fedex.com/ko-kr/online/rating.html",
         use_container_width=True
     )
