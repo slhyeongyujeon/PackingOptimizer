@@ -365,7 +365,8 @@ if st.button(
     box_width,
     box_height,
     placements,
-    bom
+    bom,
+    max_set
     )
 
     st.session_state.fig = fig
@@ -395,7 +396,8 @@ if st.session_state.placements is not None:
                 box_width,
                 box_height,
                 st.session_state.placements,
-                st.session_state.bom
+                st.session_state.bom,
+                st.session_state.max_set
                 )
             )
 

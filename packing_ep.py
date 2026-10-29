@@ -222,6 +222,35 @@ def generate_candidate_points(
             )
         )
 
+        for q in placements:
+
+            if p == q:
+                continue
+
+            points.add(
+                (
+                    p.x + p.length,
+                    q.y,
+                    q.z
+                )
+            )
+
+            points.add(
+                (
+                    q.x,
+                    p.y + p.width,
+                    q.z
+                )
+            )
+
+            points.add(
+                (
+                    q.x,
+                    q.y,
+                    p.z + p.height
+                )
+            )       
+
     return sorted(
         points,
         key=lambda p:
@@ -925,7 +954,8 @@ def create_plotly_figure(
     box_width,
     box_height,
     placements,
-    bom
+    bom,
+    max_set
 ):
 
     fig = go.Figure()
@@ -938,41 +968,63 @@ def create_plotly_figure(
         "#9467bd"
     ]
 
-    part_names = [
-    item["name"]
-    for item in bom
-    ]
+    part_names = []
+
+    for item in bom:
+
+        total_qty = (
+            int(item["qty_per_set"])
+            * max_set
+        )
+
+        part_names.append(
+            f"{item['name']} ({total_qty}개)"
+        )
 
     color_map = {
-            name: colors[i % len(colors)]
-            for i, name in enumerate(part_names)
-        }
+        item["name"]: colors[i % len(colors)]
+        for i, item in enumerate(bom)
+    }
 
     legend_added = set()
 
     ordered_placements = []
 
-    for part_name in part_names:
+    for item in bom:
 
         ordered_placements.extend(
             [
                 p
                 for p in placements
-                if p.name == part_name
+                if p.name == item["name"]
             ]
         )
+
 
     for p in ordered_placements:
 
         color = color_map[p.name]
 
+        qty_map = {
+            item["name"]:
+            int(item["qty_per_set"]) * max_set
+            for item in bom
+        }
+
+        legend_name = (
+            f"{p.name} "
+            f"({qty_map[p.name]}개)"
+        )
+
         showlegend = (
-            p.name not in legend_added
+            legend_name not in legend_added
         )
 
         legend_added.add(
-            p.name
+            legend_name
         )
+
+        name=legend_name,
 
         x0 = p.x
         x1 = p.x + p.length
@@ -1000,6 +1052,8 @@ def create_plotly_figure(
 
         fig.add_trace(
 
+            
+            
             go.Mesh3d(
 
                 x=vertices_x,
@@ -1014,7 +1068,7 @@ def create_plotly_figure(
 
                 opacity=0.25,
 
-                name=p.name,
+                name=f"{p.name} ({qty_map[p.name]}개)",
 
                 showlegend=showlegend
             )
@@ -1161,6 +1215,12 @@ def create_plotly_figure(
             r=0,
             t=20,
             b=0
+        ),
+
+        legend=dict(
+            font=dict(
+                size=18
+            )
         )
     )
 
@@ -1171,7 +1231,8 @@ def save_packing_image(
     box_width,
     box_height,
     placements,
-    bom
+    bom,
+    max_set
 ):
 
     views = {
@@ -1199,7 +1260,8 @@ def save_packing_image(
             box_width,
             box_height,
             placements,
-            bom
+            bom,
+            max_set
         )
 
         fig.update_layout(
@@ -1252,13 +1314,14 @@ def save_packing_image(
     ]
 
     part_names = [
-    item["name"]
+    f"{item['name']} "
+    f"({int(item['qty_per_set']) * max_set}개)"
     for item in bom
     ]
 
     color_map = {
-        name: colors[i % len(colors)]
-        for i, name in enumerate(part_names)
+    item["name"]: colors[i % len(colors)]
+    for i, item in enumerate(bom)
     }
 
     legend_height = max(
@@ -1319,7 +1382,12 @@ def save_packing_image(
 
     legend_y = height + 20
 
-    for i, name in enumerate(part_names):
+    for i, item in enumerate(bom):
+
+        display_name = (
+            f"{item['name']} "
+            f"({int(item['qty_per_set']) * max_set}개)"
+        )
 
         y = legend_y + 80 + (i * 180)
 
@@ -1327,18 +1395,18 @@ def save_packing_image(
             (
                 50,
                 y,
-                180,
-                y + 130
+                260,
+                y + 180
             ),
-            fill=color_map[name]
+            fill=color_map[item["name"]]
         )
 
         draw.text(
             (
-                200,
+                320,
                 y
             ),
-            name,
+            display_name,
             fill="white",
             font=font
         )
