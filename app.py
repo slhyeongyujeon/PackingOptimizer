@@ -280,12 +280,10 @@ if st.button(
 
     for item in bom:
 
-        if item["part_type"] == "목업 부품":
-
+        if item["part_type"] == "목업 부품 (+50mm)":
             offset = 50
 
-        else:
-
+        elif item["part_type"] == "사출 부품 (+20mm)":
             offset = 20
 
         item["length"] += offset
@@ -416,7 +414,7 @@ if st.session_state.fig is not None:
 
     result_col3.metric(
     "추정 박스 무게",
-    f"{st.session_state.estimated_box_weight_kg:.0f} kg"
+    f"{st.session_state.estimated_box_weight_kg:g} kg"
 )
 
     if st.session_state.utilization is not None:

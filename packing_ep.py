@@ -47,7 +47,13 @@ def get_rotations(
 
 
     if direction == "자유롭게":
-        return sorted(all_rotations)
+        return sorted(
+            all_rotations,
+            key=lambda r: (
+                r[2],
+                -(r[0] * r[1])
+            )
+        )
 
 
 
@@ -251,13 +257,39 @@ def generate_candidate_points(
                 )
             )       
 
+            points.add(
+                (
+                    p.x + p.length,
+                    q.y + q.width,
+                    q.z
+                )
+            )
+
+            points.add(
+                (
+                    p.x + p.length,
+                    q.y,
+                    q.z + q.height
+                )
+            )
+
+            points.add(
+                (
+                    q.x,
+                    p.y + p.width,
+                    q.z + q.height
+                )
+            )
+
+
     return sorted(
         points,
         key=lambda p:
         (
             p[2],
             p[0] + p[1],
-            p[0]
+            p[0],
+            p[1]
         )
     )
 
@@ -288,84 +320,53 @@ def is_supported(
 
 
 
-    required_support_ratio = 0.3
+    required_support_ratio = 0.15
 
 
+    bottom_area = (
+        length
+        *
+        width
+    )
+
+    total_support_area = 0
 
     for p in placements:
 
-
-
         top_z = p.z + p.height
-
-
 
         if abs(top_z - z) > tolerance:
             continue
 
-
-
         support_x = (
-
-
-
             min(
                 x + length,
                 p.x + p.length
             )
-
-
-
             -
-
-
-
             max(
                 x,
                 p.x
             )
-
-
-
         )
 
-
-
         support_y = (
-
-
-
             min(
                 y + width,
                 p.y + p.width
             )
-
-
-
             -
-
-
-
             max(
                 y,
                 p.y
             )
-
-
-
         )
-
-
 
         if support_x <= 0:
             continue
 
-
-
         if support_y <= 0:
             continue
-
-
 
         support_area = (
             support_x
@@ -373,30 +374,18 @@ def is_supported(
             support_y
         )
 
+        total_support_area += support_area
 
+    support_ratio = (
+        total_support_area
+        /
+        bottom_area
+    )
 
-        bottom_area = (
-            length
-            *
-            width
-        )
-
-
-
-        support_ratio = (
-            support_area
-            /
-            bottom_area
-        )
-
-
-
-        if support_ratio >= required_support_ratio:
-            return True
-
-
-
-    return False
+    return (
+        support_ratio
+        >= required_support_ratio
+    )
 
 
 
@@ -463,11 +452,89 @@ def can_place_at(
     )
 
 
+def calc_contact_area(
+    x,
+    y,
+    z,
+    l,
+    w,
+    h,
+    placements
+):
 
+    contact = 0
+
+    if x == 0:
+        contact += w * h
+
+    if y == 0:
+        contact += l * h
+
+    if z == 0:
+        contact += l * w
+
+    for p in placements:
+
+        # X 방향 접촉
+        if abs((x + l) - p.x) <= 1:
+
+            overlap_y = (
+                min(y + w, p.y + p.width)
+                -
+                max(y, p.y)
+            )
+
+            overlap_z = (
+                min(z + h, p.z + p.height)
+                -
+                max(z, p.z)
+            )
+
+            if overlap_y > 0 and overlap_z > 0:
+                contact += overlap_y * overlap_z
+
+        # Y 방향 접촉
+        if abs((y + w) - p.y) <= 1:
+
+            overlap_x = (
+                min(x + l, p.x + p.length)
+                -
+                max(x, p.x)
+            )
+
+            overlap_z = (
+                min(z + h, p.z + p.height)
+                -
+                max(z, p.z)
+            )
+
+            if overlap_x > 0 and overlap_z > 0:
+                contact += overlap_x * overlap_z
+
+        # Z 방향 접촉
+        if abs((z + h) - p.z) <= 1:
+
+            overlap_x = (
+                min(x + l, p.x + p.length)
+                -
+                max(x, p.x)
+            )
+
+            overlap_y = (
+                min(y + w, p.y + p.width)
+                -
+                max(y, p.y)
+            )
+
+            if overlap_x > 0 and overlap_y > 0:
+                contact += overlap_x * overlap_y
+
+    return contact
 
 # ==========================
 # Extreme Point Placement
 # ==========================
+
 
 def place_part_ep(
     placements,
@@ -481,6 +548,9 @@ def place_part_ep(
     direction
 ):
 
+    best_candidate = None
+    best_score = -999999
+    
     points = generate_candidate_points(
         placements
     )
@@ -513,17 +583,37 @@ def place_part_ep(
                 box_height
             ):
 
-                return Placement(
-                    part_name,
+                contact_score = calc_contact_area(
                     px,
                     py,
                     pz,
                     l,
                     w,
-                    h
+                    h,
+                    placements
                 )
 
-    return None
+                score = (
+                    contact_score
+                    - pz * 700
+                    - (px + py) * 0.1
+                )
+
+                if score > best_score:
+
+                    best_score = score
+
+                    best_candidate = Placement(
+                        part_name,
+                        px,
+                        py,
+                        pz,
+                        l,
+                        w,
+                        h
+                    )
+
+    return best_candidate
 
 # ==========================
 # Parts Builder
@@ -551,21 +641,14 @@ def build_parts_for_set(
 
     parts.sort(
         key=lambda p:
-        (
             p["length"]
             * p["width"]
             * p["height"],
-
-            max(
-                p["length"],
-                p["width"],
-                p["height"]
-            )
-        ),
         reverse=True
     )
 
     return parts
+
 
 # ==========================
 # Packing Engine
@@ -597,13 +680,12 @@ def pack_parts_ep(
         if result is None:
 
             return placements
-
+        
         placements.append(
             result
         )
 
     return placements
-
 
 
 
