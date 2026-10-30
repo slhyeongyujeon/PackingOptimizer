@@ -410,20 +410,12 @@ if st.session_state.result_png:
 
 if st.session_state.fig is not None:
 
-    result_col1, result_col2, result_col3, result_col4 = st.columns(4)
+    result_col1, result_col2, result_col3 = st.columns(3)
 
     result_col3.metric(
     "추정 박스 무게",
     f"{st.session_state.estimated_box_weight_kg:g} kg"
 )
-
-    if st.session_state.utilization is not None:
-
-        result_col4.metric(
-            "적재율",
-            f"{st.session_state.utilization:.1f}%"
-        )
-
 
     result_col1.metric(
         "1박스 당 최대 SET",
